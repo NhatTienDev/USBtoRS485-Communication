@@ -1,13 +1,16 @@
 import serial.tools.list_ports
 import time
-import relayStatus
 import sys
+import relayStatus
 from Adafruit_IO import Client, MQTTClient, RequestError
 
-ADAFRUIT_IO_USERNAME = "tuannguyen2208nat"
-ADAFRUIT_IO_KEY = "aio_Tpqz630LWJqmQ5r5g4Kjzeg4BHHh"
-FEED_KEY = "status"
-aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
+AIO_USERNAME = "Nhat_Tien_2002"
+AIO_KEY = "aio_XOoI31w6GWEmp8X2jQPXRjVYlaSJ"
+AIO_FEED_IDS = "relay_status"
+
+# String : !RELAYxx:ON#, !RELAYxx:OFF#
+# xx from 00 to 31, corresponding to channel 1 to 32 of Modbus
+client = Client(AIO_USERNAME, AIO_KEY)
 
 def getPort():
     ports = serial.tools.list_ports.comports()
@@ -21,28 +24,20 @@ def getPort():
             commPort = (splitPort[0])
     return commPort
 
-portName = getPort()
-print(portName)
-if portName != "None":
-    ser = serial.Serial(port=portName, baudrate=9600)
+if getPort() != "None":
+    print("Port communication is:" + commPort)
+    ser = serial.Serial(port = portName, baudrate = 9600)
+    print(ser)
 
 relay_ON = relayStatus.relay_ON
 relay_OFF = relayStatus.relay_OFF
 
-def setDevice(state, i):
-    if state:
-        ser.write(relay_ON[i])
-        print(f"CH{i} ON")
-    else:
-        ser.write(relay_OFF[i])
-        print(f"CH{i} OFF")
-
 def connected(client):
-    print('Connected to Adafruit IO! Listening for changes...')
-    client.subscribe(FEED_KEY)
+    print("Connecting to AdafruitIO server...")
+    client.subscribe(AIO_FEED_IDS)
 
 def disconnected(client):
-    print('Disconnected from Adafruit IO!')
+    print("Disconnect to AdafruitIO server !")
     sys.exit(1)
 
 def message(client, feed_id, payload):
@@ -58,24 +53,28 @@ def message(client, feed_id, payload):
                 relay_state = False
             else:
                 raise ValueError("Invalid command")
-            setDevice(relay_state, relay_index)
+            writeStatus(relay_state, relay_index)
         except (ValueError, IndexError) as e:
             print(f"Error parsing payload: {e}")
 
-# Set up the MQTT client
-client = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
+def writeStatus(status, index):
+    if status:
+        ser.write(relay_ON[index])
+        print(f"CH{index} is ON")
+    else:
+        ser.write(relay_OFF[index])
+        print(f"CH{index} is OFF")
 
 client.on_connect = connected
 client.on_disconnect = disconnected
 client.on_message = message
 
 try:
-    # Connect to Adafruit IO
+    # Connect to AdafruitIO server
     client.connect()
     client.loop_background()
 except RequestError as e:
     print(f"Error connecting to Adafruit IO: {e}")
 
-# Keep the script running
 while True:
     time.sleep(10)
