@@ -4,8 +4,8 @@ import sys
 import relayStatus
 from Adafruit_IO import Client, MQTTClient, RequestError
 
-AIO_USERNAME = "Nhat_Tien_2002"
-AIO_KEY = "aio_XOoI31w6GWEmp8X2jQPXRjVYlaSJ"
+AIO_USERNAME = "Amen"
+AIO_KEY = "Amen"
 AIO_FEED_IDS = "relay_status"
 
 # String : !RELAYxx:ON#, !RELAYxx:OFF#
